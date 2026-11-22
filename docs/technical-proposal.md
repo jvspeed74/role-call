@@ -15,7 +15,6 @@
     * [1. Introduction](#1-introduction)
         * [1.1 Motivation](#11-motivation)
         * [1.2 Purpose of this document](#12-purpose-of-this-document)
-        * [1.3 Document organization](#13-document-organization)
     * [2. Terminology](#2-terminology)
         * [2.1 Conventions](#21-conventions)
         * [2.2 Environment](#22-environment)
@@ -115,16 +114,6 @@ finish. The Abstract and Section 1 use words in their ordinary sense. Section 2 
 document uses in a technical sense, and each definition relies only on ordinary words and on terms defined before it.
 Every section after Section 2 uses only terms defined there. Where the proposal depends on facts about operating systems
 that have not yet been confirmed, it labels them as assumptions.
-
-### 1.3 Document organization
-
-Section 2 declares the terminology. Section 3 states the goals, non-goals, design principles, and success criteria.
-Section 4 places the system in its environment. Sections 5 through 10 define the operations, the detection model, the
-attendance model, the time model, persistence and backup, and the invocation model. Section 11 defines configuration.
-Section 12 describes the logical architecture and the technology choices. Section 13 records platform support and its
-assumptions. Section 14 states the principles of failure handling, and Section 15 addresses security and privacy.
-Sections 16 through 19 record risks, alternatives considered, open questions, and the matters deferred to detailed
-design.
 
 ---
 
