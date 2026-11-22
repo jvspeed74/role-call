@@ -103,16 +103,16 @@ of responsibilities among its parts. It deliberately stops short of low-level de
 An employer with a hybrid work arrangement may require a minimum number of in-person days per calendar quarter. Keeping
 that tally by hand is error-prone: days are forgotten, holidays are miscounted, and the record cannot be checked after
 the fact. A computer connected to an office network can carry evidence of that connection in its own network
-configuration, in the form of the domain names that the office network assigns to it; Section 13 records, for each
+configuration, in the form of the domain names that the office network assigns to it; [Section 13](#13-platform-support) records, for each
 platform, how this evidence is read and how far that reading has been verified. Rollcall reads that evidence at times
 chosen by the user, records it, and turns the accumulated record into a daily and quarterly account of attendance.
 
 ### 1.2 Purpose of this document
 
 This document fixes the definition of the system before detailed design begins. It is intended to be read from start to
-finish. The Abstract and Section 1 use words in their ordinary sense. Section 2 defines every term that the rest of the
+finish. The [Abstract](#abstract) and [Section 1](#1-introduction) use words in their ordinary sense. [Section 2](#2-terminology) defines every term that the rest of the
 document uses in a technical sense, and each definition relies only on ordinary words and on terms defined before it.
-Every section after Section 2 uses only terms defined there. Where the proposal depends on facts about operating systems
+Every section after [Section 2](#2-terminology) uses only terms defined there. Where the proposal depends on facts about operating systems
 that have not yet been confirmed, it labels them as assumptions.
 
 ---
@@ -122,10 +122,10 @@ that have not yet been confirmed, it labels them as assumptions.
 ### 2.1 Conventions
 
 The words **must** and **must not** state requirements of the proposed system. The word **may** states either a
-permitted behavior or a possible outcome that the system does not prevent. Indicative statements in Sections 5 through
-15 that describe Rollcall's behavior are also requirements.
+permitted behavior or a possible outcome that the system does not prevent. Indicative statements in Sections [5](#5-operations) through
+[15](#15-security-and-privacy) that describe Rollcall's behavior are also requirements.
 
-Statements about operating-system and database-engine behavior on which the design depends are collected in Section 13,
+Statements about operating-system and database-engine behavior on which the design depends are collected in [Section 13](#13-platform-support),
 where each carries one of three labels: **verified**, meaning observed directly during the preparation of this proposal,
 by experiment or by reading the database engine's source; **measured**, meaning quantified by an experiment whose
 conditions are stated; or **assumed**, meaning believed on the basis of documentation or prior work but not yet
@@ -140,12 +140,12 @@ observed.
 **Caller.** Any agent outside Rollcall that starts it: the user at a terminal, or a scheduling facility that the user
 has configured.
 
-**Operation.** One unit of work that a caller may request. Section 5 defines the eleven operations.
+**Operation.** One unit of work that a caller may request. [Section 5](#5-operations) defines the eleven operations.
 
 **Invocation.** One run of Rollcall, started by a caller, that performs exactly one operation and then ends.
 
 **Configuration.** The set of settings, supplied by the user in a document that the caller identifies, that govern an
-invocation. Section 11 defines its contents.
+invocation. [Section 11](#11-configuration) defines its contents.
 
 **Interruption.** The end of an invocation without orderly completion, caused by external termination of its process, a
 program defect, an operating-system crash, or loss of power to the host.
@@ -302,7 +302,7 @@ is never a timestamp regression, and an observation whose instant equals that la
 ### 2.6 Records and backups
 
 **Store.** The single local database in which Rollcall keeps its records, together with the companion files that the
-database engine manages beside it. Section 9.1 lists its contents.
+database engine manages beside it. [Section 9.1](#91-the-store) lists its contents.
 
 **Live mode.** The mode in which the store operates during normal use, which allows readers to proceed while one
 invocation writes. A file copied out of the store is produced in a different, standalone mode.
@@ -318,7 +318,7 @@ companion files.
 **Backup.** The act of reserving a backup sequence number and copying the store into a backup artifact. The operation
 that performs it is the **backup operation**.
 
-**Restore.** The replacement of the store by a backup artifact, performed by the user outside Rollcall (Section 9.5).
+**Restore.** The replacement of the store by a backup artifact, performed by the user outside Rollcall ([Section 9.5](#95-restoring-a-backup)).
 
 **Flush.** A request that the operating system write a file's data to the storage device. An **ordinary flush** is the
 platform's standard request; a **full flush** is a stronger request, offered by a platform whose standard request does
@@ -337,7 +337,7 @@ candidates.
 **Invocation shell.** The component that receives the caller's request, reads the configuration and the clock, and
 orders the work of an invocation.
 
-Section 12 states the responsibilities and dependencies of the four components in full.
+[Section 12](#12-logical-architecture) states the responsibilities and dependencies of the four components in full.
 
 **Reporting policy.** The quarterly quota and the daily threshold.
 
@@ -345,7 +345,7 @@ Section 12 states the responsibilities and dependencies of the four components i
 
 **Location settings.** The directory that holds the store and the default directory for backup artifacts.
 
-Section 11 states the constraints and defaults of every setting.
+[Section 11](#11-configuration) states the constraints and defaults of every setting.
 
 ---
 
@@ -355,7 +355,7 @@ Section 11 states the constraints and defaults of every setting.
 
 | ID  | Goal                                                                                                                                                                                  |
 |-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| G-1 | Record, at each sample, what the host's network showed and the verdict reached from it, as append-only evidence with its provenance, subject to the durability limits of Section 9.3. |
+| G-1 | Record, at each sample, what the host's network showed and the verdict reached from it, as append-only evidence with its provenance, subject to the durability limits of [Section 9.3](#93-durability). |
 | G-2 | Report effective attendance for any range of dates and progress toward the quarterly quota for any quarter.                                                                           |
 | G-3 | Allow the user to record manual corrections and manage holidays without altering any observation.                                                                                     |
 | G-4 | Retain with each observation enough evidence to explain its verdict and to identify the observations that a different detection profile would have classified differently.            |
@@ -370,7 +370,7 @@ Section 11 states the constraints and defaults of every setting.
 | N-2 | Proof of physical presence.                                                             | A matching DNS suffix shows a network connection, not the user's location.                                                                  |
 | N-3 | Changing the host's network configuration, resolving names, or contacting another host. | Rollcall observes the host; it does not act on the network.                                                                                 |
 | N-4 | Serving more than one user, or sharing a store across hosts.                            | The record is personal and local.                                                                                                           |
-| N-5 | Detection by resolved host names or by address ranges.                                  | Reserved as possible future detection methods (Section 17).                                                                                 |
+| N-5 | Detection by resolved host names or by address ranges.                                  | Reserved as possible future detection methods ([Section 17](#17-alternatives-considered)).                                                                                 |
 | N-6 | Repairing a damaged store, or migrating a store to a different structure.               | Silent repair or migration can destroy evidence; Rollcall reports such a store instead.                                                     |
 
 ### 3.3 Design principles
@@ -380,7 +380,7 @@ Section 11 states the constraints and defaults of every setting.
    other conclusion, including daily qualification, effective attendance, and quarterly progress, is derived each time a
    result is produced and is never stored.
 3. **One invocation, one operation.** Each invocation performs one operation and ends.
-4. **Least access.** Each operation reads or writes only the resources it needs (Section 5.5).
+4. **Least access.** Each operation reads or writes only the resources it needs ([Section 5.5](#55-resource-access-by-operation)).
 5. **Refusal over guessing.** Rollcall never substitutes a default for something it cannot determine: unresolvable
    timezone rules, an inaccessible store, or an invalid stored value causes a reported failure, not a silent fallback.
 6. **Contained variation.** Network-inspection behavior that differs between operating systems is confined to one
@@ -393,10 +393,10 @@ Section 11 states the constraints and defaults of every setting.
 |------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | SC-1 | For every observation with a snapshot, applying its recorded detection profile to its recorded snapshot reproduces its recorded verdict and provenance exactly.                                                                                                        |
 | SC-2 | For the same snapshot and the same detection profile, the sample operation and the diagnose operation reach the same verdict and provenance.                                                                                                                           |
-| SC-3 | Effective attendance agrees with the precedence of Section 2.5 for all 27 combinations of manual correction (none, in-person, remote), holiday status (none, weekday holiday, weekend holiday), and daily qualification (no observations, below threshold, qualifies). |
+| SC-3 | Effective attendance agrees with the precedence of [Section 2.5](#25-attendance) for all 27 combinations of manual correction (none, in-person, remote), holiday status (none, weekday holiday, weekend holiday), and daily qualification (no observations, below threshold, qualifies). |
 | SC-4 | Every backup artifact reported as complete opens on its own and passes the database engine's full integrity check, including when another invocation writes to the store during the copy.                                                                              |
-| SC-5 | No two backup operations on one store receive the same backup sequence number, except across a restore (Section 9.5).                                                                                                                                                  |
-| SC-6 | The rules of the decision core and the platform translations of Section 6.1 pass the same tests on Linux, macOS, and Windows development hosts.                                                                                                                        |
+| SC-5 | No two backup operations on one store receive the same backup sequence number, except across a restore ([Section 9.5](#95-restoring-a-backup)).                                                                                                                                                  |
+| SC-6 | The rules of the decision core and the platform translations of [Section 6.1](#61-from-the-host-to-suffix-candidates) pass the same tests on Linux, macOS, and Windows development hosts.                                                                                                                        |
 
 ---
 
@@ -429,7 +429,7 @@ flowchart TB
 No other application process participates. On Linux, inspection communicates with a local operating-system service
 (assumption A-1); on every platform, Rollcall requires no database server, no background service of its own, and no
 elevated privileges. More than one invocation may run at the same time against the same store, for example a scheduled
-sample and a report requested by the user; Section 9.6 states how they coexist.
+sample and a report requested by the user; [Section 9.6](#96-concurrent-invocations) states how they coexist.
 
 ---
 
@@ -472,7 +472,7 @@ Calendar management never alters an observation, and each of these operations ch
 
 | Operation  | Behavior                                                                                                                                                   | Result                                                     |
 |------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
-| **Backup** | Performs one backup into the configured backup directory, or into a destination directory supplied with the invocation. Section 9.4 states its guarantees. | The backup artifact's path and its backup sequence number. |
+| **Backup** | Performs one backup into the configured backup directory, or into a destination directory supplied with the invocation. [Section 9.4](#94-backup-guarantees) states its guarantees. | The backup artifact's path and its backup sequence number. |
 
 ### 5.5 Resource access by operation
 
@@ -490,7 +490,7 @@ Each operation accesses only the resources marked in the following table.
 | Backup                            | read          | read  | —       | read and write | write              |
 
 An operation marked "read" for the store never changes its records. Any operation that uses the store creates it when it
-does not exist and places it in live mode when it is not (Section 9.5); the database engine may also update its
+does not exist and places it in live mode when it is not ([Section 9.5](#95-restoring-a-backup)); the database engine may also update its
 companion files during a read.
 
 ---
@@ -500,15 +500,15 @@ companion files during a read.
 ### 6.1 From the host to suffix candidates
 
 An inspection reads every active adapter and, for each, the DNS suffixes that the operating system associates with it.
-Each operating system reports these in its own form; the network-inspection component (Section 12.1) translates each
+Each operating system reports these in its own form; the network-inspection component ([Section 12.1](#121-components)) translates each
 platform's report into suffix candidates. The translation assigns each value its suffix source, preserves the order in
 which the operating system reports adapters and values, and reports every value, including empty and repeated values. It
-applies no judgment about which values matter: every rule that can affect a verdict belongs to classification. Section
-13.1 records the translation for each platform.
+applies no judgment about which values matter: every rule that can affect a verdict belongs to classification. [Section
+13.1](#131-network-sources-and-their-translation) records the translation for each platform.
 
 ### 6.2 Classification and admission
 
-Classification follows the definition in Section 2.4. Its two policy inputs are the pattern list and the admission
+Classification follows the definition in [Section 2.4](#24-network-evidence). Its two policy inputs are the pattern list and the admission
 policy:
 
 - the **pattern list** states which domain names identify the office;
@@ -537,12 +537,12 @@ flowchart TD
 The admission policy exists because a domain name can appear on a host for reasons unrelated to location. Virtual
 private network software can install the office domain on its tunnel adapter when the user connects from elsewhere
 (assumption A-7). On Linux, such a domain can appear as a routing-only candidate, which an admission policy can decline
-to admit. On macOS and Windows, routing-only candidates are not reported (Section 13.1), so such a domain appears as a
+to admit. On macOS and Windows, routing-only candidates are not reported ([Section 13.1](#131-network-sources-and-their-translation)), so such a domain appears as a
 primary or search candidate; there, an adapter exclusion naming the tunnel adapter's name or kind is the means of
 preventing an office verdict.
 
 The proposed default admission policy admits the primary and search sources, does not admit the routing-only source, and
-contains no adapter exclusions. Section 18 records this default as open for confirmation.
+contains no adapter exclusions. [Section 18](#18-open-questions) records this default as open for confirmation.
 
 ### 6.3 Fixed verdicts
 
@@ -550,7 +550,7 @@ The verdict of an observation is reached once, when the observation is stored, u
 that moment, and it is never reached again. A later change to the pattern list, the admission policy, or the matching
 rules affects only observations stored after the change. As a result, the verdicts of past observations do not depend on
 the current configuration, and the office counts of past dates change only when observations are added to them or when
-the store returns to an earlier committed state (Sections 9.3 and 9.5).
+the store returns to an earlier committed state (Sections [9.3](#93-durability) and [9.5](#95-restoring-a-backup)).
 
 For every observation that contains a snapshot, applying its recorded detection profile to its recorded snapshot
 reproduces its recorded verdict and provenance. An office verdict always has provenance, and a non-office verdict never
@@ -589,7 +589,7 @@ never combines readings from more than one inspection into one snapshot.
 ### 7.1 Daily qualification
 
 Daily qualification is derived from the office count of a date and the daily threshold in the current configuration.
-Because verdicts are fixed (Section 6.3), adding observations to a date can raise its office count but never lower it;
+Because verdicts are fixed ([Section 6.3](#63-fixed-verdicts)), adding observations to a date can raise its office count but never lower it;
 under an unchanged daily threshold, a date that qualifies continues to qualify unless the store returns to an earlier
 committed state. A change to the daily threshold may change the daily qualification of any date, past or future, without
 any change to the record.
@@ -597,7 +597,7 @@ any change to the record.
 ### 7.2 Holidays, manual corrections, and effective attendance
 
 Effective attendance is derived for every date from its manual correction, its holiday status, and its daily
-qualification, by the precedence stated in Section 2.5:
+qualification, by the precedence stated in [Section 2.5](#25-attendance):
 
 ```mermaid
 flowchart TD
@@ -628,7 +628,7 @@ already counts toward the quarter. The quarterly quota is the same for every qua
 
 The captured instants of observations need not increase in ingestion order: a time correction can set the host clock
 back, and concurrent samples can be stored in an order different from the order of their captured instants, because each
-sample captures its instant before it opens the store (Section 10.2). Rollcall never alters or discards an observation
+sample captures its instant before it opens the store ([Section 10.2](#102-order-of-work)). Rollcall never alters or discards an observation
 for this reason. Daily history instead reports, for each date, the observation numbers of its timestamp regressions.
 Comparison uses captured instants, never local clock readings, so a change of offset, such as the repeated local hour at
 the end of daylight-saving time, does not by itself produce a timestamp regression. Because timestamp regressions are
@@ -658,7 +658,7 @@ name is unique and does not depend on the host's timezone.
 
 ### 9.1 The store
 
-The store is a single local database file, managed by an embedded database engine (Section 12.4), together with the
+The store is a single local database file, managed by an embedded database engine ([Section 12.4](#124-technology-choices)), together with the
 companion files that the engine maintains beside it. It holds observations, including their snapshots or inspection
 failures and their detection profiles; manual corrections; holidays; and the most recently reserved backup sequence
 number. The store must reside on a file system local to the host. Any operation that uses the store creates it, and the
@@ -676,7 +676,7 @@ directory that contains it, when they do not exist.
    a default for an invalid stored value.
 5. **No repair or migration.** A store that fails identity or structure validation is reported and left unmodified.
    Damage is reported when the database engine encounters it. Apart from the engine's own recovery of incomplete changes
-   and the switch into live mode (Section 9.5), Rollcall never repairs, migrates, or otherwise rewrites a store.
+   and the switch into live mode ([Section 9.5](#95-restoring-a-backup)), Rollcall never repairs, migrates, or otherwise rewrites a store.
 
 ### 9.3 Durability
 
@@ -687,7 +687,7 @@ storage device at each commit. A loss of power or a crash of the operating syste
 committed since the database engine last forced its files to the device; the store then returns to one earlier committed
 state, in which recently added records may be absent and recently removed manual corrections or holidays may be present
 again. This proposal does not bound the size of that window; it depends on the engine's schedule for forcing its files
-to the device. On macOS, an ordinary flush does not reach the storage device (Section 13.3), so Rollcall requests a full
+to the device. On macOS, an ordinary flush does not reach the storage device ([Section 13.3](#133-storage-facts)), so Rollcall requests a full
 flush wherever the consistency of the store depends on one.
 
 The reservation of a backup sequence number is the one change that receives the strongest durability the host provides:
@@ -731,7 +731,7 @@ flowchart TD
 ```
 
 A reserved backup sequence number is never issued again by the same store, whether the backup succeeds, fails, or is
-interrupted; Section 9.5 states the one exception. If a backup fails after creating its file, Rollcall attempts to
+interrupted; [Section 9.5](#95-restoring-a-backup) states the one exception. If a backup fails after creating its file, Rollcall attempts to
 remove that file and no other; if removal also fails, Rollcall reports both failures and the path of the remaining file.
 Rollcall does not remove the temporary file that the database engine writes beside the destination. A reported success
 does not guarantee that the backup artifact itself survives a loss of power that follows immediately. Backup sequence
@@ -754,8 +754,8 @@ that fails this identity check is reported and left unmodified.
 Any number of invocations may use one store at the same time. The database engine's locking serializes their changes.
 Every change requests write access at its start, so that contention is resolved by waiting rather than by failure
 partway through. When an invocation cannot obtain access within a bounded waiting time, it fails and reports contention
-rather than proceeding. The switch into live mode (Section 9.5) is the one exception: it fails at once, without waiting,
-if another invocation has the store open (Section 13.3). Two concurrent backups never receive the same backup sequence
+rather than proceeding. The switch into live mode ([Section 9.5](#95-restoring-a-backup)) is the one exception: it fails at once, without waiting,
+if another invocation has the store open ([Section 13.3](#133-storage-facts)). Two concurrent backups never receive the same backup sequence
 number and never lose a reservation.
 
 ---
@@ -832,7 +832,7 @@ A backup invocation may supply its own destination directory, which applies to t
    relative directory resolves against the working directory in which the invocation started. Each invocation resolves
    its directories once and never falls back to a different location if access fails.
 5. **Effect of change.** A change to the reporting policy applies to every result produced afterward, including results
-   for past dates. A change to the detection settings applies only to samples taken afterward (Section 6.3).
+   for past dates. A change to the detection settings applies only to samples taken afterward ([Section 6.3](#63-fixed-verdicts)).
 
 ---
 
@@ -846,8 +846,8 @@ Rollcall consists of four components.
 |------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Decision core**      | Classification and the matching rules, validation of the configuration and of individual values, daily qualification, effective attendance, quarterly arithmetic, timestamp regressions, determination of the local date, resolution of directories, and the assembly of results. | Performs no input or output and never reads the clock; every input arrives as a value.                                                                                                                                                           |
 | **Persistence**        | The store and backups: creation, identity and structure validation, the switch into live mode, atomic changes, consistent reads, durable reservation, exclusive creation, and copying.                                                                                            | The only component that uses the database engine.                                                                                                                                                                                                |
-| **Network inspection** | One or more readers per operating system, and the translation from each platform's report to suffix candidates.                                                                                                                                                                   | The only component that contains operating-system-specific network code, and the only component whose own code may use low-level operating-system interfaces that bypass the memory-safety checks of the implementation language (Section 12.4). |
-| **Invocation shell**   | The command-line interface; reading the configuration document and supplying it to the decision core for validation; reading the clock and the user's working and profile directories; ordering the stages of Section 10.2; and presenting results and failures.                  | Contains no attendance or detection rule.                                                                                                                                                                                                        |
+| **Network inspection** | One or more readers per operating system, and the translation from each platform's report to suffix candidates.                                                                                                                                                                   | The only component that contains operating-system-specific network code, and the only component whose own code may use low-level operating-system interfaces that bypass the memory-safety checks of the implementation language ([Section 12.4](#124-technology-choices)). |
+| **Invocation shell**   | The command-line interface; reading the configuration document and supplying it to the decision core for validation; reading the clock and the user's working and profile directories; ordering the stages of [Section 10.2](#102-order-of-work); and presenting results and failures.                  | Contains no attendance or detection rule.                                                                                                                                                                                                        |
 
 ### 12.2 Dependencies
 
@@ -893,7 +893,7 @@ safety by default and produces a single executable that requires no runtime inst
 transactions, consistent reads alongside a concurrent writer, and the ability to write a consistent copy of a live store
 into a new file while other invocations continue to use it. It requires no server and keeps one database file and the
 companion files it manages. Rollcall carries its own copy of the engine rather than using the one supplied by the host,
-because the copy supplied by macOS was observed to refuse the copy procedure of Section 9.4 (Section 13.3). The
+because the copy supplied by macOS was observed to refuse the copy procedure of [Section 9.4](#94-backup-guarantees) ([Section 13.3](#133-storage-facts)). The
 selection of libraries is deferred to detailed design.
 
 ---
@@ -915,13 +915,13 @@ candidates. All classification takes place in the decision core.
 
 | ID  | Assumption                                                                                                                                                                      | Consequence if false                                                                                         |
 |-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| A-1 | Linux hosts run the resolver service described in Section 13.1.                                                                                                                 | Hosts without it require a second Linux reader; until one exists, they cannot be inspected.                  |
-| A-2 | The Windows suffix fields carry the values described in Section 13.1.                                                                                                           | The Windows translation changes; no other component changes.                                                 |
+| A-1 | Linux hosts run the resolver service described in [Section 13.1](#131-network-sources-and-their-translation).                                                                                                                 | Hosts without it require a second Linux reader; until one exists, they cannot be inspected.                  |
+| A-2 | The Windows suffix fields carry the values described in [Section 13.1](#131-network-sources-and-their-translation).                                                                                                           | The Windows translation changes; no other component changes.                                                 |
 | A-3 | The user's profile directory is given by the conventional home-directory setting on Linux and macOS, and by the user-profile setting on Windows.                                | Only the source of the profile directory changes, in the invocation shell; the resolution rule is unchanged. |
 | A-4 | On Linux, routing-only domains are those installed to direct queries, such as by virtual private network software, rather than to identify the local network.                   | The proposed default admission policy may need revision.                                                     |
-| A-5 | On Linux and Windows, an ordinary flush reaches the storage device.                                                                                                             | Durability on those platforms requires the full-flush treatment that Section 9.3 applies to macOS.           |
+| A-5 | On Linux and Windows, an ordinary flush reaches the storage device.                                                                                                             | Durability on those platforms requires the full-flush treatment that [Section 9.3](#93-durability) applies to macOS.           |
 | A-6 | Linux, macOS, and Windows hosts honor the exclusive creation of a file at a path that does not exist.                                                                           | Backup step 2 cannot guarantee that an existing file is never overwritten.                                   |
-| A-7 | Virtual private network software can install the office domain on its tunnel adapter, as a routing-only domain on Linux and as a primary or search domain on macOS and Windows. | The admission-policy discussion of Section 6.2 overstates the risk it addresses.                             |
+| A-7 | Virtual private network software can install the office domain on its tunnel adapter, as a routing-only domain on Linux and as a primary or search domain on macOS and Windows. | The admission-policy discussion of [Section 6.2](#62-classification-and-admission) overstates the risk it addresses.                             |
 | A-8 | Each supported operating system provides a facility that can start a program at intervals chosen by the user.                                                                   | The user needs a separately installed scheduler.                                                             |
 
 ### 13.3 Storage facts
@@ -933,7 +933,7 @@ candidates. All classification takes place in the decision core.
 | When the database engine opens a database file beside which it finds a leftover companion file, it applies that companion file before any check that Rollcall performs.                                                   | Verified (engine source)                 |
 | The switch into live mode requires exclusive access and fails at once, without waiting, when another connection has the store open.                                                                                       | Verified (engine source)                 |
 | The copy of SQLite supplied with macOS refused to write a consistent copy into an empty, pre-created file; the copy distributed with the engine's source accepted it.                                                     | Verified                                 |
-| A backup artifact produced by the copy procedure of Section 9.4 opened on its own, in standalone mode, and included changes still held in the live store's companion files.                                               | Verified                                 |
+| A backup artifact produced by the copy procedure of [Section 9.4](#94-backup-guarantees) opened on its own, in standalone mode, and included changes still held in the live store's companion files.                                               | Verified                                 |
 
 ---
 
@@ -943,7 +943,7 @@ candidates. All classification takes place in the decision core.
    end the invocation before any record is written.
 2. **No partial results.** A failed operation returns a failure, never a partial result presented as success.
 3. **Inspection failure is evidence.** In the sample operation, an inspection failure becomes a stored observation
-   before it is reported (Section 6.5).
+   before it is reported ([Section 6.5](#65-inspection-failure)).
 4. **Refusal over repair.** An invalid stored value, an incompatible store, or an unusable location is reported, never
    repaired, replaced, or bypassed.
 5. **Defects interrupt.** A program defect ends the invocation as an interruption; it is never reported as an ordinary
@@ -991,16 +991,16 @@ figures are estimates; neither has been measured.
 
 | ID   | Risk                                                                                                                                                                                                                                      | Basis                                                                                                                                      | Consequence                                                                                                                                                         | Mitigation                                                                                                                                      |
 |------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| R-1  | An admission policy that is too broad produces office verdicts for connections made from elsewhere, such as through a virtual private network. On macOS and Windows the proposed default admits such a connection's domain (Section 6.2). | Assumption A-7.                                                                                                                            | Because verdicts are fixed, the affected observations keep an office verdict permanently.                                                                           | Adapter exclusions; on Linux, not admitting routing-only candidates; manual corrections for affected dates; retained evidence to identify them. |
-| R-2  | An admission policy that is too narrow produces non-office verdicts for office connections.                                                                                                                                               | On Linux no candidate has the primary source (Section 13.1), so a policy admitting only the primary source finds no office evidence there. | Office verdicts are under-counted permanently, so affected dates may fail to qualify.                                                                               | The proposed default admits the search source; manual corrections.                                                                              |
-| R-3  | Retained evidence forms a location history that no operation removes.                                                                                                                                                                     | Section 15.2.                                                                                                                              | Disclosure of the store or of a backup artifact exposes the user's movements.                                                                                       | Local storage only; the user chooses backup destinations; retention controls are open (Q-3).                                                    |
-| R-4  | A change to the matching rules made without a new version makes the audit record misleading.                                                                                                                                              | Section 6.4 relies on the recorded version identifying the rules that produced each verdict.                                               | An audit attributes a verdict to the wrong rules.                                                                                                                   | Every revision of the matching rules receives a distinct version, and every version in the record remains implemented.                          |
-| R-5  | The first invocation to open a restored store fails at once, without waiting, if another invocation has the store open, because the switch into live mode requires exclusive access. This applies to reports as well.                     | Database engine source.                                                                                                                    | A report or sample fails after a restore.                                                                                                                           | Section 9.5 requires that restores take place while no invocation runs; a later invocation succeeds.                                            |
-| R-6  | Ordinary changes can be lost on power loss or operating-system crash.                                                                                                                                                                     | Section 9.3.                                                                                                                               | Recent observations, manual corrections, or holidays may be absent, and recently removed ones may reappear.                                                         | Accepted: the strongest durability is reserved for backup sequence numbers, where reuse would be harmful.                                       |
-| R-7  | Restoring a backup returns the backup sequence to an earlier number.                                                                                                                                                                      | Section 9.5.                                                                                                                               | Backup sequence numbers issued after the restored artifact was taken can be issued again; artifact names remain distinct because they include the captured instant. | Documented restore procedure; a restore operation is open (Q-5).                                                                                |
-| R-8  | A later release that changes the structure of the store cannot open stores created by earlier releases, because Rollcall does not migrate stores (N-6).                                                                                   | Section 9.2 item 5.                                                                                                                        | Upgrading Rollcall can make an existing store unusable.                                                                                                             | The identity check reports the incompatibility without modifying the store; an explicit, user-invoked migration is open (Q-6).                  |
+| R-1  | An admission policy that is too broad produces office verdicts for connections made from elsewhere, such as through a virtual private network. On macOS and Windows the proposed default admits such a connection's domain ([Section 6.2](#62-classification-and-admission)). | Assumption A-7.                                                                                                                            | Because verdicts are fixed, the affected observations keep an office verdict permanently.                                                                           | Adapter exclusions; on Linux, not admitting routing-only candidates; manual corrections for affected dates; retained evidence to identify them. |
+| R-2  | An admission policy that is too narrow produces non-office verdicts for office connections.                                                                                                                                               | On Linux no candidate has the primary source ([Section 13.1](#131-network-sources-and-their-translation)), so a policy admitting only the primary source finds no office evidence there. | Office verdicts are under-counted permanently, so affected dates may fail to qualify.                                                                               | The proposed default admits the search source; manual corrections.                                                                              |
+| R-3  | Retained evidence forms a location history that no operation removes.                                                                                                                                                                     | [Section 15.2](#152-retained-data).                                                                                                                              | Disclosure of the store or of a backup artifact exposes the user's movements.                                                                                       | Local storage only; the user chooses backup destinations; retention controls are open (Q-3).                                                    |
+| R-4  | A change to the matching rules made without a new version makes the audit record misleading.                                                                                                                                              | [Section 6.4](#64-evidence-retained-for-audit) relies on the recorded version identifying the rules that produced each verdict.                                               | An audit attributes a verdict to the wrong rules.                                                                                                                   | Every revision of the matching rules receives a distinct version, and every version in the record remains implemented.                          |
+| R-5  | The first invocation to open a restored store fails at once, without waiting, if another invocation has the store open, because the switch into live mode requires exclusive access. This applies to reports as well.                     | Database engine source.                                                                                                                    | A report or sample fails after a restore.                                                                                                                           | [Section 9.5](#95-restoring-a-backup) requires that restores take place while no invocation runs; a later invocation succeeds.                                            |
+| R-6  | Ordinary changes can be lost on power loss or operating-system crash.                                                                                                                                                                     | [Section 9.3](#93-durability).                                                                                                                               | Recent observations, manual corrections, or holidays may be absent, and recently removed ones may reappear.                                                         | Accepted: the strongest durability is reserved for backup sequence numbers, where reuse would be harmful.                                       |
+| R-7  | Restoring a backup returns the backup sequence to an earlier number.                                                                                                                                                                      | [Section 9.5](#95-restoring-a-backup).                                                                                                                               | Backup sequence numbers issued after the restored artifact was taken can be issued again; artifact names remain distinct because they include the captured instant. | Documented restore procedure; a restore operation is open (Q-5).                                                                                |
+| R-8  | A later release that changes the structure of the store cannot open stores created by earlier releases, because Rollcall does not migrate stores (N-6).                                                                                   | [Section 9.2](#92-record-guarantees) item 5.                                                                                                                        | Upgrading Rollcall can make an existing store unusable.                                                                                                             | The identity check reports the incompatibility without modifying the store; an explicit, user-invoked migration is open (Q-6).                  |
 | R-9  | A scheduling facility that stops starting the sample operation produces no observations and no warning.                                                                                                                                   | Rollcall owns no schedule (N-1).                                                                                                           | Affected dates other than weekday holidays are remote unless corrected.                                                                                             | Daily history shows dates with no observations; the user verifies the schedule.                                                                 |
-| R-10 | A relative directory setting resolves against the working directory of the invocation, which a scheduling facility may set differently from a terminal.                                                                                   | Section 11.2 rule 4.                                                                                                                       | Scheduled and interactive invocations use different stores.                                                                                                         | Recommend absolute directory settings or the profile-directory reference.                                                                       |
+| R-10 | A relative directory setting resolves against the working directory of the invocation, which a scheduling facility may set differently from a terminal.                                                                                   | [Section 11.2](#112-rules) rule 4.                                                                                                                       | Scheduled and interactive invocations use different stores.                                                                                                         | Recommend absolute directory settings or the profile-directory reference.                                                                       |
 
 ---
 
@@ -1022,10 +1022,10 @@ figures are estimates; neither has been measured.
 
 | ID  | Question                                                                                                                                                                                                            | Proposed answer                                                                                    |
 |-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| Q-1 | Which suffix sources should the default admission policy admit?                                                                                                                                                     | The primary and search sources (Section 6.2), with the limitation recorded in R-1.                 |
+| Q-1 | Which suffix sources should the default admission policy admit?                                                                                                                                                     | The primary and search sources ([Section 6.2](#62-classification-and-admission)), with the limitation recorded in R-1.                 |
 | Q-2 | Should Rollcall provide an operation that reports which past observations an alternative detection profile would classify differently?                                                                              | Not in the first release; the retained evidence makes it possible later.                           |
 | Q-3 | Should the user be able to limit or purge retained network evidence?                                                                                                                                                | Unresolved. Any such control conflicts with the append-only guarantee and requires its own design. |
-| Q-4 | Should unrecognized configuration settings be rejected?                                                                                                                                                             | Yes (Section 11.2 rule 3), pending confirmation.                                                   |
+| Q-4 | Should unrecognized configuration settings be rejected?                                                                                                                                                             | Yes ([Section 11.2](#112-rules) rule 3), pending confirmation.                                                   |
 | Q-5 | Should Rollcall provide a restore operation that refuses to run while the store is in use, removes the replaced store's companion files, and carries the backup sequence forward so that no number is issued twice? | Yes, in a later release.                                                                           |
 | Q-6 | Should a later release offer an explicit, user-invoked migration of a store to a new structure?                                                                                                                     | Unresolved; N-6 excludes only silent migration.                                                    |
 
