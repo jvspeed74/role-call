@@ -42,10 +42,11 @@ mod win {
     };
     use windows_sys::Win32::NetworkManagement::IpHelper::{
         DNS_INTERFACE_SETTINGS, DNS_INTERFACE_SETTINGS_VERSION1, DNS_SETTING_DOMAIN,
-        DNS_SETTING_SEARCHLIST, GAA_FLAG_INCLUDE_ALL_INTERFACES, GAA_FLAG_SKIP_ANYCAST,
-        GAA_FLAG_SKIP_DNS_SERVER, GAA_FLAG_SKIP_MULTICAST, GetAdaptersAddresses,
-        IP_ADAPTER_ADDRESSES_LH, IP_ADAPTER_ADDRESSES_LH_0_0, IP_ADAPTER_DNS_SUFFIX,
-        IP_ADAPTER_UNICAST_ADDRESS_LH, SetInterfaceDnsSettings,
+        DNS_SETTING_SEARCHLIST, FreeInterfaceDnsSettings, GAA_FLAG_INCLUDE_ALL_INTERFACES,
+        GAA_FLAG_SKIP_ANYCAST, GAA_FLAG_SKIP_DNS_SERVER, GAA_FLAG_SKIP_MULTICAST,
+        GetAdaptersAddresses, GetInterfaceDnsSettings, IP_ADAPTER_ADDRESSES_LH,
+        IP_ADAPTER_ADDRESSES_LH_0_0, IP_ADAPTER_DNS_SUFFIX, IP_ADAPTER_UNICAST_ADDRESS_LH,
+        SetInterfaceDnsSettings,
     };
     use windows_sys::Win32::Networking::WinSock::{
         AF_INET, AF_UNSPEC, SOCKADDR, SOCKADDR_IN, SOCKET_ADDRESS,
@@ -394,12 +395,17 @@ mod win {
             "adapter[{i}] Length={} IfIndex={} Ipv6IfIndex={}",
             header.Length, header.IfIndex, a.Ipv6IfIndex
         );
+        let mut interface_guid = None;
         match read_terminated(region, a.AdapterName.cast_const()) {
-            Ok(Some(bytes)) => println!(
-                "adapter[{i}] AdapterName={} bytes=[{}]",
-                quote(&String::from_utf8_lossy(&bytes)),
-                hex8(&bytes)
-            ),
+            Ok(Some(bytes)) => {
+                let name = String::from_utf8_lossy(&bytes);
+                println!(
+                    "adapter[{i}] AdapterName={} bytes=[{}]",
+                    quote(&name),
+                    hex8(&bytes)
+                );
+                interface_guid = parse_guid(&name);
+            }
             Ok(None) => println!("adapter[{i}] AdapterName=<null>"),
             Err(why) => {
                 *anomalies += 1;
@@ -435,7 +441,79 @@ mod win {
             a.TunnelType, a.ConnectionType
         );
         print_suffixes(i, a.FirstDnsSuffix.cast_const(), region, anomalies);
+        match interface_guid {
+            Some(guid) => print_interface_dns(i, guid, anomalies),
+            None => println!("adapter[{i}] InterfaceDns=<no-guid>"),
+        }
         print_unicast(i, a.FirstUnicastAddress.cast_const(), region, anomalies);
+    }
+
+    /// Bound on a string the DNS client returns, in UTF-16 code units.
+    const MAX_DNS_STRING_UNITS: usize = 65_536;
+
+    /// Reads a NUL-terminated UTF-16 string allocated by GetInterfaceDnsSettings.
+    /// Ok(None) means null.
+    fn read_os_wide(p: *const u16) -> Result<Option<Vec<u16>>, String> {
+        if p.is_null() {
+            return Ok(None);
+        }
+        if !p.is_aligned() {
+            return Err(format!("misaligned addr=0x{:x}", p.addr()));
+        }
+        let mut units = Vec::new();
+        let mut q = p;
+        while units.len() < MAX_DNS_STRING_UNITS {
+            // SAFETY: GetInterfaceDnsSettings succeeded, so each non-null string field points to
+            // a NUL-terminated UTF-16 string that stays allocated until FreeInterfaceDnsSettings,
+            // which the caller calls only after this function returns. `p` is aligned (checked)
+            // and `q` advances one unit at a time without passing the terminator, because the
+            // loop stops at the first NUL. Every bit pattern is a valid u16.
+            let unit = unsafe { q.read() };
+            if unit == 0 {
+                return Ok(Some(units));
+            }
+            units.push(unit);
+            q = q.wrapping_add(1);
+        }
+        Err(format!("unterminated-within-{MAX_DNS_STRING_UNITS}-units"))
+    }
+
+    /// Prints the per-interface DNS settings that the DNS client holds for one adapter.
+    fn print_interface_dns(i: usize, guid: GUID, anomalies: &mut usize) {
+        let mut settings = DNS_INTERFACE_SETTINGS {
+            Version: DNS_INTERFACE_SETTINGS_VERSION1,
+            ..Default::default()
+        };
+        // SAFETY: `settings` is a live, aligned DNS_INTERFACE_SETTINGS whose Version is set, as
+        // the function requires; its pointer fields start null. The function writes only into
+        // `settings` and allocates the strings its fields then point to. The call is synchronous.
+        let rc = unsafe { GetInterfaceDnsSettings(guid, &mut settings) };
+        if rc != ERROR_SUCCESS {
+            println!(
+                "adapter[{i}] InterfaceDns os_error={rc} name={}",
+                error_name(rc)
+            );
+            return;
+        }
+        println!("adapter[{i}] InterfaceDns.Flags=0x{:x}", settings.Flags);
+        for (label, p) in [
+            ("Domain", settings.Domain),
+            ("SearchList", settings.SearchList),
+        ] {
+            match read_os_wide(p.cast_const()) {
+                Ok(Some(units)) => {
+                    println!("adapter[{i}] InterfaceDns.{label}={}", render_wide(&units));
+                }
+                Ok(None) => println!("adapter[{i}] InterfaceDns.{label}=<null>"),
+                Err(why) => {
+                    *anomalies += 1;
+                    println!("adapter[{i}] InterfaceDns.{label}=<anomaly {why}>");
+                }
+            }
+        }
+        // SAFETY: `settings` was filled by a successful GetInterfaceDnsSettings and has not been
+        // freed. No pointer read from it is used after this call.
+        unsafe { FreeInterfaceDnsSettings(&mut settings) };
     }
 
     fn print_suffixes(
