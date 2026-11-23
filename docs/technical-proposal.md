@@ -1,6 +1,6 @@
 # Rollcall: Technical Proposal
 
-|            |                                                                              |
+| ---        | ---                                                                          |
 |------------|------------------------------------------------------------------------------|
 | **Status** | Draft for review                                                             |
 | **Date**   | 2026-11-21                                                                   |
@@ -103,9 +103,9 @@ of responsibilities among its parts. It deliberately stops short of low-level de
 An employer with a hybrid work arrangement may require a minimum number of in-person days per calendar quarter. Keeping
 that tally by hand is error-prone: days are forgotten, holidays are miscounted, and the record cannot be checked after
 the fact. A computer connected to an office network can carry evidence of that connection in its own network
-configuration, in the form of the domain names that the office network assigns to it; [Section 13](#13-platform-support) records, for each
-platform, how this evidence is read and how far that reading has been verified. Rollcall reads that evidence at times
-chosen by the user, records it, and turns the accumulated record into a daily and quarterly account of attendance.
+configuration, in the form of the domain names that the office network assigns to it; [Section 13](#13-platform-support) records how this
+evidence is read on Windows 11 and how far that reading has been verified. Rollcall reads that evidence at times chosen
+by the user, records it, and turns the accumulated record into a daily and quarterly account of attendance.
 
 ### 1.2 Purpose of this document
 
@@ -174,11 +174,11 @@ falls on Saturday or Sunday. The classification belongs to the date itself, not 
 **Network adapter.** A network interface reported by the host operating system. An adapter is **active** when the
 operating system reports its operational status as up.
 
-**Adapter name.** The operating system's name for an adapter. It may be empty, and it need not be unique among the
-adapters of one host.
+**Adapter name.** The name that the operating system shows the user for an adapter. It may be empty, and it need not
+be unique among the adapters of one host.
 
-**Adapter kind.** The operating system's text describing an adapter's type. Its values differ between platforms, and it
-may be empty.
+**Adapter kind.** The operating system's description of an adapter's device. It may be empty, and it need not be
+unique among the adapters of one host.
 
 **Domain name** and **label.** A domain name is a sequence of nonempty labels separated by single dots, such as
 `corp.example`, whose labels are `corp` and `example`.
@@ -187,11 +187,10 @@ may be empty.
 suffix is compared after one trailing dot, if present, is removed. A DNS suffix is **malformed** if, after that removal,
 it is not a domain name. An empty or malformed DNS suffix is retained as observed.
 
-**Suffix source.** The role in which the operating system reports a DNS suffix. There are three sources:
+**Suffix source.** The role in which the operating system reports a DNS suffix. There are two sources:
 
-- **primary**: the single connection-specific domain name of an adapter, on platforms that distinguish one;
-- **search**: a domain that the operating system appends to unqualified names during resolution;
-- **routing-only**: a domain that directs matching queries to an adapter's name servers without being used for search.
+- **primary**: the single connection-specific domain name of an adapter;
+- **search**: a domain that the operating system appends to unqualified names during resolution.
 
 **Suffix candidate.** One DNS suffix reported for one adapter, together with its suffix source.
 
@@ -320,9 +319,7 @@ that performs it is the **backup operation**.
 
 **Restore.** The replacement of the store by a backup artifact, performed by the user outside Rollcall ([Section 9.5](#95-restoring-a-backup)).
 
-**Flush.** A request that the operating system write a file's data to the storage device. An **ordinary flush** is the
-platform's standard request; a **full flush** is a stronger request, offered by a platform whose standard request does
-not guarantee that data reaches the device.
+**Flush.** A request that the operating system write a file's data to the storage device.
 
 ### 2.7 Components and settings
 
@@ -331,8 +328,8 @@ output.
 
 **Persistence.** The component that owns the store and backups.
 
-**Network inspection.** The component that performs inspections and translates each platform's report into suffix
-candidates.
+**Network inspection.** The component that performs inspections and translates the operating system's report into
+suffix candidates.
 
 **Invocation shell.** The component that receives the caller's request, reads the configuration and the clock, and
 orders the work of an invocation.
@@ -360,18 +357,19 @@ orders the work of an invocation.
 | G-3 | Allow the user to record manual corrections and manage holidays without altering any observation.                                                                                     |
 | G-4 | Retain with each observation enough evidence to explain its verdict and to identify the observations that a different detection profile would have classified differently.            |
 | G-5 | Produce backup artifacts that are consistent, open independently, never overwrite an existing file, and are numbered by a sequence whose reservations survive power loss.             |
-| G-6 | Run on Linux, macOS, and Windows hosts with the user's ordinary access rights and no supporting services beyond those of the operating system.                                        |
+| G-6 | Run on Windows 11 hosts that have x64 or ARM64 processors, with the user's ordinary access rights and no supporting services beyond those of the operating system.                    |
 
 ### 3.2 Non-goals
 
-| ID  | Non-goal                                                                                | Reason                                                                                                                                      |
-|-----|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| N-1 | Scheduling. Rollcall does not decide when to sample, and keeps no resident process.     | Each supported operating system provides a scheduling facility (assumption A-8); owning another would add a long-lived process for no gain. |
-| N-2 | Proof of physical presence.                                                             | A matching DNS suffix shows a network connection, not the user's location.                                                                  |
-| N-3 | Changing the host's network configuration, resolving names, or contacting another host. | Rollcall observes the host; it does not act on the network.                                                                                 |
-| N-4 | Serving more than one user, or sharing a store across hosts.                            | The record is personal and local.                                                                                                           |
-| N-5 | Detection by resolved host names or by address ranges.                                  | Reserved as possible future detection methods ([Section 17](#17-alternatives-considered)).                                                                                 |
-| N-6 | Repairing a damaged store, or migrating a store to a different structure.               | Silent repair or migration can destroy evidence; Rollcall reports such a store instead.                                                     |
+| ID  | Non-goal                                                                                | Reason                                                                                                                           |
+|-----|-----------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| N-1 | Scheduling. Rollcall does not decide when to sample, and keeps no resident process.     | The operating system provides a scheduling facility (assumption A-8); owning another would add a long-lived process for no gain. |
+| N-2 | Proof of physical presence.                                                             | A matching DNS suffix shows a network connection, not the user's location.                                                       |
+| N-3 | Changing the host's network configuration, resolving names, or contacting another host. | Rollcall observes the host; it does not act on the network.                                                                      |
+| N-4 | Serving more than one user, or sharing a store across hosts.                            | The record is personal and local.                                                                                                |
+| N-5 | Detection by resolved host names or by address ranges.                                  | Reserved as possible future detection methods ([Section 17](#17-alternatives-considered)).                                                                      |
+| N-6 | Repairing a damaged store, or migrating a store to a different structure.               | Silent repair or migration can destroy evidence; Rollcall reports such a store instead.                                          |
+| N-7 | Hosts other than Windows 11, including Linux, macOS, and other releases of Windows.     | Each platform requires its own reader, its own verified evidence, and its own maintenance.                                       |
 
 ### 3.3 Design principles
 
@@ -383,20 +381,20 @@ orders the work of an invocation.
 4. **Least access.** Each operation reads or writes only the resources it needs ([Section 5.5](#55-resource-access-by-operation)).
 5. **Refusal over guessing.** Rollcall never substitutes a default for something it cannot determine: unresolvable
    timezone rules, an inaccessible store, or an invalid stored value causes a reported failure, not a silent fallback.
-6. **Contained variation.** Network-inspection behavior that differs between operating systems is confined to one
-   component, and every other platform difference is confined to the component that owns the affected resource. The
-   rules that reach conclusions are written once and are identical on every platform.
+6. **Contained dependence.** Operating-system-specific network code is confined to one component, and every other
+   dependence on the operating system is confined to the component that owns the affected resource. The rules that reach
+   conclusions contain no operating-system-specific code.
 
 ### 3.4 Success criteria
 
-| ID   | Criterion                                                                                                                                                                                                                                                              |
-|------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| SC-1 | For every observation with a snapshot, applying its recorded detection profile to its recorded snapshot reproduces its recorded verdict and provenance exactly.                                                                                                        |
-| SC-2 | For the same snapshot and the same detection profile, the sample operation and the diagnose operation reach the same verdict and provenance.                                                                                                                           |
-| SC-3 | Effective attendance agrees with the precedence of [Section 2.5](#25-attendance) for all 27 combinations of manual correction (none, in-person, remote), holiday status (none, weekday holiday, weekend holiday), and daily qualification (no observations, below threshold, qualifies). |
-| SC-4 | Every backup artifact reported as complete opens on its own and passes the database engine's full integrity check, including when another invocation writes to the store during the copy.                                                                              |
-| SC-5 | No two backup operations on one store receive the same backup sequence number, except across a restore ([Section 9.5](#95-restoring-a-backup)).                                                                                                                                                  |
-| SC-6 | The rules of the decision core and the platform translations of [Section 6.1](#61-from-the-host-to-suffix-candidates) pass the same tests on Linux, macOS, and Windows development hosts.                                                                                                                        |
+| ID   | Criterion                                                                                                                                                                                                                                                                                                  |
+|------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| SC-1 | For every observation with a snapshot, applying its recorded detection profile to its recorded snapshot reproduces its recorded verdict and provenance exactly.                                                                                                                                            |
+| SC-2 | For the same snapshot and the same detection profile, the sample operation and the diagnose operation reach the same verdict and provenance.                                                                                                                                                               |
+| SC-3 | Effective attendance agrees with the precedence of [Section 2.5](#25-attendance) for all 27 combinations of manual correction (none, in-person, remote), holiday status (none, weekday holiday, weekend holiday), and daily qualification (no observations, below threshold, qualifies).                                     |
+| SC-4 | Every backup artifact reported as complete opens on its own and passes the database engine's full integrity check, including when another invocation writes to the store during the copy.                                                                                                                  |
+| SC-5 | No two backup operations on one store receive the same backup sequence number, except across a restore ([Section 9.5](#95-restoring-a-backup)).                                                                                                                                                                                      |
+| SC-6 | The rules of the decision core and the translation of [Section 6.1](#61-from-the-host-to-suffix-candidates) pass their tests on every development computer, and the complete test suite passes on Windows 11 for each supported processor architecture; [Section 13](#13-platform-support) states, for each architecture, whether the suite ran natively or under emulation. |
 
 ---
 
@@ -426,10 +424,9 @@ flowchart TB
     inv -->|" backup artifacts "| dest
 ```
 
-No other application process participates. On Linux, inspection communicates with a local operating-system service
-(assumption A-1); on every platform, Rollcall requires no database server, no background service of its own, and no
-elevated privileges. More than one invocation may run at the same time against the same store, for example a scheduled
-sample and a report requested by the user; [Section 9.6](#96-concurrent-invocations) states how they coexist.
+No other application process participates. Rollcall requires no database server, no background service of its own, and
+no elevated privileges. More than one invocation may run at the same time against the same store, for example a
+scheduled sample and a report requested by the user; [Section 9.6](#96-concurrent-invocations) states how they coexist.
 
 ---
 
@@ -500,11 +497,11 @@ companion files during a read.
 ### 6.1 From the host to suffix candidates
 
 An inspection reads every active adapter and, for each, the DNS suffixes that the operating system associates with it.
-Each operating system reports these in its own form; the network-inspection component ([Section 12.1](#121-components)) translates each
-platform's report into suffix candidates. The translation assigns each value its suffix source, preserves the order in
-which the operating system reports adapters and values, and reports every value, including empty and repeated values. It
-applies no judgment about which values matter: every rule that can affect a verdict belongs to classification. [Section
-13.1](#131-network-sources-and-their-translation) records the translation for each platform.
+The operating system reports these in its own form; the network-inspection component ([Section 12.1](#121-components)) translates that
+report into suffix candidates. The translation assigns each value its suffix source, preserves the order in which the
+operating system reports adapters and values, and reports every value, including empty and repeated values. It applies
+no judgment about which values matter: every rule that can affect a verdict belongs to classification. [Section 13.1](#131-network-sources-and-their-translation)
+records the translation.
 
 ### 6.2 Classification and admission
 
@@ -535,14 +532,12 @@ flowchart TD
 ```
 
 The admission policy exists because a domain name can appear on a host for reasons unrelated to location. Virtual
-private network software can install the office domain on its tunnel adapter when the user connects from elsewhere
-(assumption A-7). On Linux, such a domain can appear as a routing-only candidate, which an admission policy can decline
-to admit. On macOS and Windows, routing-only candidates are not reported ([Section 13.1](#131-network-sources-and-their-translation)), so such a domain appears as a
-primary or search candidate; there, an adapter exclusion naming the tunnel adapter's name or kind is the means of
-preventing an office verdict.
+private network software can install the office domain on its tunnel adapter, as a primary or search candidate, when the
+user connects from elsewhere (assumption A-3). An adapter exclusion naming the tunnel adapter's name or kind is the
+means of preventing an office verdict from such a candidate.
 
-The proposed default admission policy admits the primary and search sources, does not admit the routing-only source, and
-contains no adapter exclusions. [Section 18](#18-open-questions) records this default as open for confirmation.
+The proposed default admission policy admits both the primary and the search source and contains no adapter exclusions.
+[Section 18](#18-open-questions) records this default as open for confirmation.
 
 ### 6.3 Fixed verdicts
 
@@ -687,8 +682,7 @@ storage device at each commit. A loss of power or a crash of the operating syste
 committed since the database engine last forced its files to the device; the store then returns to one earlier committed
 state, in which recently added records may be absent and recently removed manual corrections or holidays may be present
 again. This proposal does not bound the size of that window; it depends on the engine's schedule for forcing its files
-to the device. On macOS, an ordinary flush does not reach the storage device ([Section 13.3](#133-storage-facts)), so Rollcall requests a full
-flush wherever the consistency of the store depends on one.
+to the device. On Windows 11, a flush reaches the storage device (assumption A-6).
 
 The reservation of a backup sequence number is the one change that receives the strongest durability the host provides:
 once Rollcall confirms a reservation, the number remains consumed even if power is lost immediately afterward.
@@ -846,7 +840,7 @@ Rollcall consists of four components.
 |------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Decision core**      | Classification and the matching rules, validation of the configuration and of individual values, daily qualification, effective attendance, quarterly arithmetic, timestamp regressions, determination of the local date, resolution of directories, and the assembly of results. | Performs no input or output and never reads the clock; every input arrives as a value.                                                                                                                                                           |
 | **Persistence**        | The store and backups: creation, identity and structure validation, the switch into live mode, atomic changes, consistent reads, durable reservation, exclusive creation, and copying.                                                                                            | The only component that uses the database engine.                                                                                                                                                                                                |
-| **Network inspection** | One or more readers per operating system, and the translation from each platform's report to suffix candidates.                                                                                                                                                                   | The only component that contains operating-system-specific network code, and the only component whose own code may use low-level operating-system interfaces that bypass the memory-safety checks of the implementation language ([Section 12.4](#124-technology-choices)). |
+| **Network inspection** | The reader for Windows 11, and the translation from its report to suffix candidates.                                                                                                                                                                                              | The only component that contains operating-system-specific network code, and the only component whose own code may use low-level operating-system interfaces that bypass the memory-safety checks of the implementation language ([Section 12.4](#124-technology-choices)). |
 | **Invocation shell**   | The command-line interface; reading the configuration document and supplying it to the decision core for validation; reading the clock and the user's working and profile directories; ordering the stages of [Section 10.2](#102-order-of-work); and presenting results and failures.                  | Contains no attendance or detection rule.                                                                                                                                                                                                        |
 
 ### 12.2 Dependencies
@@ -873,11 +867,10 @@ fails the build, and a declared dependency that violates these rules is visible 
 
 ### 12.3 Rationale
 
-1. Every rule that produces a conclusion lives in the decision core, so it is written once, behaves identically on every
-   platform, and can be tested on any development computer without a network or a database.
-2. The translation from a platform's report to suffix candidates does not need to run on the platform whose report it
-   translates, so the translation for every platform is tested on every development computer; only the readers that call
-   the operating system are specific to a platform.
+1. Every rule that produces a conclusion lives in the decision core, so it contains no operating-system-specific code
+   and can be tested on any development computer without a network or a database.
+2. The translation from the operating system's report to suffix candidates does not need to run on Windows 11, so it is
+   tested on every development computer; only the reader that calls the operating system requires Windows 11.
 3. Confining the database engine to the persistence component keeps its internal mechanisms, including any concurrent
    work within the database library, invisible to the rest of the system.
 4. Confining low-level operating-system interfaces to the network-inspection component keeps the code written for the
@@ -892,9 +885,9 @@ Rollcall is implemented in Rust and keeps its records with the embedded SQLite d
 safety by default and produces a single executable that requires no runtime installation. SQLite provides atomic
 transactions, consistent reads alongside a concurrent writer, and the ability to write a consistent copy of a live store
 into a new file while other invocations continue to use it. It requires no server and keeps one database file and the
-companion files it manages. Rollcall carries its own copy of the engine rather than using the one supplied by the host,
-because the copy supplied by macOS was observed to refuse the copy procedure of [Section 9.4](#94-backup-guarantees) ([Section 13.3](#133-storage-facts)). The
-selection of libraries is deferred to detailed design.
+companion files it manages. Rollcall carries its own copy of the engine rather than using the one supplied with the
+operating system, so that Rollcall's build fixes the engine version and the engine behavior recorded in [Section
+13.3](#133-storage-facts) holds for the copy that runs. The selection of libraries is deferred to detailed design.
 
 ---
 
@@ -902,38 +895,53 @@ selection of libraries is deferred to detailed design.
 
 ### 13.1 Network sources and their translation
 
-| Platform | Source of DNS suffixes                                                                                                                                           | Primary                        | Search                          | Routing-only                | Evidence                                                                                                      |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|---------------------------------|-----------------------------|---------------------------------------------------------------------------------------------------------------|
-| Linux    | The operating system's resolver service, read over the local system message bus; each active link reports a list of domains, each marked as routing-only or not. | Not distinguished              | Domains not marked routing-only | Domains marked routing-only | Verified in a container on 64-bit ARM; assumed on 64-bit x86.                                                 |
-| macOS    | The system configuration store; each network service reports one domain name and a list of search domains, and names the interface it uses.                      | The service's domain name      | The service's search domains    | Not reported                | The read path is verified on one host that had no domains configured; reading a configured domain is assumed. |
-| Windows  | The operating system's adapter enumeration; each adapter reports one connection-specific suffix and a list of suffixes.                                          | The connection-specific suffix | The suffix list                 | Not reported                | Assumed, on the basis of prior work that confirmed the facility exists.                                       |
+Inspection reads two facilities of Windows 11: the adapter enumeration, which reports every adapter with its operational
+status, displayed name, device description, connection-specific suffix, suffix list, and addresses; and the
+per-interface settings of the operating system's DNS client, which report the search list configured for one adapter.
 
-On every platform the result has the same form: an ordered list of active adapters, each with an ordered list of suffix
-candidates. All classification takes place in the decision core.
+| Element of the snapshot   | Source on Windows 11                                                                                                                        | Evidence                                                                                                                                                                                                                                                                                                                                     |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Active adapters, in order | The adapters that the adapter enumeration reports with operational status up, in the order it reports them.                                 | Verified: 3 adapters on each Windows 11 host and 2 on the Windows Server host, all up, the loopback adapter among them; when every interface was requested, the enumeration also reported adapters that were not present, 20 and 12 adapters in all. That the order follows the route metric is assumed from operating-system documentation. |
+| Adapter name              | The adapter's displayed name.                                                                                                               | Verified: values such as `Ethernet 5` and `Loopback Pseudo-Interface 1`, equal to the names that the operating system's own adapter listing shows.                                                                                                                                                                                           |
+| Adapter kind              | The adapter's device description.                                                                                                           | Verified: values such as `Microsoft Hyper-V Network Adapter #3`, to which the operating system had appended an instance number.                                                                                                                                                                                                              |
+| Primary candidate         | The connection-specific suffix.                                                                                                             | Verified: both a suffix assigned by the network's address-assignment service and a suffix configured on the adapter were reported, with letter case and a trailing dot exactly as configured.                                                                                                                                                |
+| Search candidates         | The adapter's own search list from the DNS client, in configured order, followed by the adapter enumeration's suffix list (assumption A-2). | Verified for the first: a configured list of three domains was reported in order, as one text separated by spaces, with letter case, trailing dots, and a repeated value exactly as configured; no other separator was observed. The second was empty in every configuration observed.                                                       |
+| IPv4 addresses            | The adapter's unicast IPv4 addresses.                                                                                                       | Verified: equal to the addresses that the operating system's own configuration listing shows.                                                                                                                                                                                                                                                |
+
+The host's global search list is not read: it belongs to no adapter, and [Section 17](#17-alternatives-considered) records why it is not attached to
+every adapter. The result is an ordered list of active adapters, each with an ordered list of suffix candidates. All
+classification takes place in the decision core.
+
+Every observation in this section, and in [Section 13.3](#133-storage-facts) where stated, was made on 2026-11-23 (UTC) in two runs of one
+probe program on hosted continuous-integration virtual machines, in each of which one adapter was connected to a network
+that assigned its address and connection-specific suffix through the network's address-assignment service. The hosts
+were Windows 11 Enterprise 10.0.26200 on ARM64 (image `win11-vs2026-arm64`, version 20261115.219.1), running the probe
+built for ARM64 and, under emulation, built for x64; and, as a stand-in for x64 Windows 11 (assumption A-4), Windows
+Server 2025 Datacenter 10.0.26100 on x64 (image `win25-vs2026`, version 20261116.315.1). The three configurations agreed
+in both runs on every value except assigned suffixes, addresses, and adapter numbering.
 
 ### 13.2 Assumptions
 
-| ID  | Assumption                                                                                                                                                                      | Consequence if false                                                                                         |
-|-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| A-1 | Linux hosts run the resolver service described in [Section 13.1](#131-network-sources-and-their-translation).                                                                                                                 | Hosts without it require a second Linux reader; until one exists, they cannot be inspected.                  |
-| A-2 | The Windows suffix fields carry the values described in [Section 13.1](#131-network-sources-and-their-translation).                                                                                                           | The Windows translation changes; no other component changes.                                                 |
-| A-3 | The user's profile directory is given by the conventional home-directory setting on Linux and macOS, and by the user-profile setting on Windows.                                | Only the source of the profile directory changes, in the invocation shell; the resolution rule is unchanged. |
-| A-4 | On Linux, routing-only domains are those installed to direct queries, such as by virtual private network software, rather than to identify the local network.                   | The proposed default admission policy may need revision.                                                     |
-| A-5 | On Linux and Windows, an ordinary flush reaches the storage device.                                                                                                             | Durability on those platforms requires the full-flush treatment that [Section 9.3](#93-durability) applies to macOS.           |
-| A-6 | Linux, macOS, and Windows hosts honor the exclusive creation of a file at a path that does not exist.                                                                           | Backup step 2 cannot guarantee that an existing file is never overwritten.                                   |
-| A-7 | Virtual private network software can install the office domain on its tunnel adapter, as a routing-only domain on Linux and as a primary or search domain on macOS and Windows. | The admission-policy discussion of [Section 6.2](#62-classification-and-admission) overstates the risk it addresses.                             |
-| A-8 | Each supported operating system provides a facility that can start a program at intervals chosen by the user.                                                                   | The user needs a separately installed scheduler.                                                             |
+| ID  | Assumption                                                                                                                                                                                                                               | Consequence if false                                                                                                         |
+|-----|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| A-1 | An office network assigns its domain to a Windows 11 host as the connection-specific suffix of the connected adapter or as one of that adapter's search candidates ([Section 13.1](#131-network-sources-and-their-translation)).                                                       | The office network leaves no candidate that the admission policy can admit, and detection by DNS suffix cannot recognize it. |
+| A-2 | The adapter enumeration's suffix list holds search domains associated with the adapter, such as a list delivered by the network's address-assignment service.                                                                            | The translation drops the list or assigns it another source; search domains delivered that way may be absent from snapshots. |
+| A-3 | Virtual private network software can install the office domain on its tunnel adapter, as its connection-specific suffix or as one of its search candidates.                                                                              | The admission-policy discussion of [Section 6.2](#62-classification-and-admission) overstates the risk it addresses.                                             |
+| A-4 | On x64 processors, Windows 11 reports the values described in [Section 13.1](#131-network-sources-and-their-translation) as they were observed for x64 code under emulation on ARM64 Windows 11 and natively on x64 Windows Server 2025.                                               | The translation for x64 hosts changes; no other component changes.                                                           |
+| A-5 | The user's profile directory is given by the user-profile setting in every session that starts Rollcall, including sessions started by the scheduling facility. It was observed only in the session of a continuous-integration service. | Only the source of the profile directory changes, in the invocation shell; the resolution rule is unchanged.                 |
+| A-6 | On Windows 11, a flush reaches the storage device.                                                                                                                                                                                       | The durability of [Section 9.3](#93-durability), including the durable reservation of backup sequence numbers, does not hold.                  |
+| A-7 | Exclusive creation of a file at a path that does not exist is honored on every file system that holds a backup destination. It was observed only on local NTFS volumes ([Section 13.3](#133-storage-facts)).                                                   | Backup step 2 cannot guarantee that an existing file is never overwritten.                                                   |
+| A-8 | Windows 11 provides a facility that can start a program at intervals chosen by the user.                                                                                                                                                 | The user needs a separately installed scheduler.                                                                             |
 
 ### 13.3 Storage facts
 
-| Fact                                                                                                                                                                                                                      | Label                                    |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
-| On macOS, an ordinary flush is documented by the operating system as not reaching the storage device, and a full flush as reaching it.                                                                                    | Assumed (operating-system documentation) |
-| On macOS, a reservation committed with a full flush took a median of 4.0 ms (range 3.0 to 5.1 ms), against a median of 0.149 ms with an ordinary flush (30 single-reservation commits each, one host, unoptimized build). | Measured                                 |
-| When the database engine opens a database file beside which it finds a leftover companion file, it applies that companion file before any check that Rollcall performs.                                                   | Verified (engine source)                 |
-| The switch into live mode requires exclusive access and fails at once, without waiting, when another connection has the store open.                                                                                       | Verified (engine source)                 |
-| The copy of SQLite supplied with macOS refused to write a consistent copy into an empty, pre-created file; the copy distributed with the engine's source accepted it.                                                     | Verified                                 |
-| A backup artifact produced by the copy procedure of [Section 9.4](#94-backup-guarantees) opened on its own, in standalone mode, and included changes still held in the live store's companion files.                                               | Verified                                 |
+| Fact                                                                                                                                                                                               | Label                    |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------|
+| When the database engine opens a database file beside which it finds a leftover companion file, it applies that companion file before any check that Rollcall performs.                            | Verified (engine source) |
+| The switch into live mode requires exclusive access and fails at once, without waiting, when another connection has the store open.                                                                | Verified (engine source) |
+| A backup artifact produced by the copy procedure of [Section 9.4](#94-backup-guarantees) opened on its own, in standalone mode, and included changes still held in the live store's companion files.                        | Verified                 |
+| On local NTFS volumes of the hosts described in [Section 13.1](#131-network-sources-and-their-translation), creating a file exclusively at a path that already held a file or a directory failed, and the existing file's content was unchanged. | Verified                 |
+| On the same volumes, in 1,000 trials per volume of four concurrent exclusive creations at one new path, exactly one creation succeeded in every trial.                                             | Measured                 |
 
 ---
 
@@ -959,8 +967,7 @@ The classification of failures into categories, and their presentation to caller
 ### 15.1 Access
 
 Rollcall runs with the user's ordinary access rights and requires no elevated privileges. It opens no connection to
-another host; on Linux it communicates with a local operating-system service (assumption A-1). Its records reside only
-in the store and in the backup destinations that the user selects.
+another host. Its records reside only in the store and in the backup destinations that the user selects.
 
 ### 15.2 Retained data
 
@@ -989,18 +996,18 @@ figures are estimates; neither has been measured.
 
 ## 16. Risks
 
-| ID   | Risk                                                                                                                                                                                                                                      | Basis                                                                                                                                      | Consequence                                                                                                                                                         | Mitigation                                                                                                                                      |
-|------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| R-1  | An admission policy that is too broad produces office verdicts for connections made from elsewhere, such as through a virtual private network. On macOS and Windows the proposed default admits such a connection's domain ([Section 6.2](#62-classification-and-admission)). | Assumption A-7.                                                                                                                            | Because verdicts are fixed, the affected observations keep an office verdict permanently.                                                                           | Adapter exclusions; on Linux, not admitting routing-only candidates; manual corrections for affected dates; retained evidence to identify them. |
-| R-2  | An admission policy that is too narrow produces non-office verdicts for office connections.                                                                                                                                               | On Linux no candidate has the primary source ([Section 13.1](#131-network-sources-and-their-translation)), so a policy admitting only the primary source finds no office evidence there. | Office verdicts are under-counted permanently, so affected dates may fail to qualify.                                                                               | The proposed default admits the search source; manual corrections.                                                                              |
-| R-3  | Retained evidence forms a location history that no operation removes.                                                                                                                                                                     | [Section 15.2](#152-retained-data).                                                                                                                              | Disclosure of the store or of a backup artifact exposes the user's movements.                                                                                       | Local storage only; the user chooses backup destinations; retention controls are open (Q-3).                                                    |
-| R-4  | A change to the matching rules made without a new version makes the audit record misleading.                                                                                                                                              | [Section 6.4](#64-evidence-retained-for-audit) relies on the recorded version identifying the rules that produced each verdict.                                               | An audit attributes a verdict to the wrong rules.                                                                                                                   | Every revision of the matching rules receives a distinct version, and every version in the record remains implemented.                          |
-| R-5  | The first invocation to open a restored store fails at once, without waiting, if another invocation has the store open, because the switch into live mode requires exclusive access. This applies to reports as well.                     | Database engine source.                                                                                                                    | A report or sample fails after a restore.                                                                                                                           | [Section 9.5](#95-restoring-a-backup) requires that restores take place while no invocation runs; a later invocation succeeds.                                            |
-| R-6  | Ordinary changes can be lost on power loss or operating-system crash.                                                                                                                                                                     | [Section 9.3](#93-durability).                                                                                                                               | Recent observations, manual corrections, or holidays may be absent, and recently removed ones may reappear.                                                         | Accepted: the strongest durability is reserved for backup sequence numbers, where reuse would be harmful.                                       |
-| R-7  | Restoring a backup returns the backup sequence to an earlier number.                                                                                                                                                                      | [Section 9.5](#95-restoring-a-backup).                                                                                                                               | Backup sequence numbers issued after the restored artifact was taken can be issued again; artifact names remain distinct because they include the captured instant. | Documented restore procedure; a restore operation is open (Q-5).                                                                                |
-| R-8  | A later release that changes the structure of the store cannot open stores created by earlier releases, because Rollcall does not migrate stores (N-6).                                                                                   | [Section 9.2](#92-record-guarantees) item 5.                                                                                                                        | Upgrading Rollcall can make an existing store unusable.                                                                                                             | The identity check reports the incompatibility without modifying the store; an explicit, user-invoked migration is open (Q-6).                  |
-| R-9  | A scheduling facility that stops starting the sample operation produces no observations and no warning.                                                                                                                                   | Rollcall owns no schedule (N-1).                                                                                                           | Affected dates other than weekday holidays are remote unless corrected.                                                                                             | Daily history shows dates with no observations; the user verifies the schedule.                                                                 |
-| R-10 | A relative directory setting resolves against the working directory of the invocation, which a scheduling facility may set differently from a terminal.                                                                                   | [Section 11.2](#112-rules) rule 4.                                                                                                                       | Scheduled and interactive invocations use different stores.                                                                                                         | Recommend absolute directory settings or the profile-directory reference.                                                                       |
+| ID   | Risk                                                                                                                                                                                                                  | Basis                                                                                                                      | Consequence                                                                                                                                                         | Mitigation                                                                                                                                                                                                                                    |
+|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| R-1  | An admission policy that is too broad produces office verdicts for connections made from elsewhere, such as through a virtual private network. The proposed default admits such a connection's domain ([Section 6.2](#62-classification-and-admission)).  | Assumption A-3.                                                                                                            | Because verdicts are fixed, the affected observations keep an office verdict permanently.                                                                           | Adapter exclusions, which match an adapter name or kind exactly, so an instance number that the operating system appends or changes ([Section 13.1](#131-network-sources-and-their-translation)) can defeat one; manual corrections for affected dates; retained evidence to identify them. |
+| R-2  | An admission policy that is too narrow produces non-office verdicts for office connections.                                                                                                                           | The primary and search sources are distinct ([Section 2.4](#24-network-evidence)), and an office network need not assign its domain in both roles. | Office verdicts are under-counted permanently, so affected dates may fail to qualify.                                                                               | The proposed default admits both sources; manual corrections.                                                                                                                                                                                 |
+| R-3  | Retained evidence forms a location history that no operation removes.                                                                                                                                                 | [Section 15.2](#152-retained-data).                                                                                                              | Disclosure of the store or of a backup artifact exposes the user's movements.                                                                                       | Local storage only; the user chooses backup destinations; retention controls are open (Q-3).                                                                                                                                                  |
+| R-4  | A change to the matching rules made without a new version makes the audit record misleading.                                                                                                                          | [Section 6.4](#64-evidence-retained-for-audit) relies on the recorded version identifying the rules that produced each verdict.                               | An audit attributes a verdict to the wrong rules.                                                                                                                   | Every revision of the matching rules receives a distinct version, and every version in the record remains implemented.                                                                                                                        |
+| R-5  | The first invocation to open a restored store fails at once, without waiting, if another invocation has the store open, because the switch into live mode requires exclusive access. This applies to reports as well. | Database engine source.                                                                                                    | A report or sample fails after a restore.                                                                                                                           | [Section 9.5](#95-restoring-a-backup) requires that restores take place while no invocation runs; a later invocation succeeds.                                                                                                                                          |
+| R-6  | Ordinary changes can be lost on power loss or operating-system crash.                                                                                                                                                 | [Section 9.3](#93-durability).                                                                                                               | Recent observations, manual corrections, or holidays may be absent, and recently removed ones may reappear.                                                         | Accepted: the strongest durability is reserved for backup sequence numbers, where reuse would be harmful.                                                                                                                                     |
+| R-7  | Restoring a backup returns the backup sequence to an earlier number.                                                                                                                                                  | [Section 9.5](#95-restoring-a-backup).                                                                                                               | Backup sequence numbers issued after the restored artifact was taken can be issued again; artifact names remain distinct because they include the captured instant. | Documented restore procedure; a restore operation is open (Q-5).                                                                                                                                                                              |
+| R-8  | A later release that changes the structure of the store cannot open stores created by earlier releases, because Rollcall does not migrate stores (N-6).                                                               | [Section 9.2](#92-record-guarantees) item 5.                                                                                                        | Upgrading Rollcall can make an existing store unusable.                                                                                                             | The identity check reports the incompatibility without modifying the store; an explicit, user-invoked migration is open (Q-6).                                                                                                                |
+| R-9  | A scheduling facility that stops starting the sample operation produces no observations and no warning.                                                                                                               | Rollcall owns no schedule (N-1).                                                                                           | Affected dates other than weekday holidays are remote unless corrected.                                                                                             | Daily history shows dates with no observations; the user verifies the schedule.                                                                                                                                                               |
+| R-10 | A relative directory setting resolves against the working directory of the invocation, which a scheduling facility may set differently from a terminal.                                                               | [Section 11.2](#112-rules) rule 4.                                                                                                       | Scheduled and interactive invocations use different stores.                                                                                                         | Recommend absolute directory settings or the profile-directory reference.                                                                                                                                                                     |
 
 ---
 
@@ -1009,12 +1016,13 @@ figures are estimates; neither has been measured.
 | Alternative                                                                                                                               | Reason not chosen                                                                                                                                                                                                                                                                                                                                                                 |
 |-------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Derive verdicts when results are produced**, from the retained evidence and the current detection profile.                              | This would let a policy correction reclassify history, but results for past periods would change whenever the detection settings change, and every report would repeat the classification of every observation in its range. Fixed verdicts make past results stable, and the retained evidence still identifies affected observations for correction.                            |
-| **Reduce each adapter to one DNS suffix** inside each platform reader.                                                                    | The selection rule would be written once per platform, and the values not selected would be lost before they could be recorded.                                                                                                                                                                                                                                                   |
+| **Reduce each adapter to one DNS suffix** inside the reader.                                                                              | The selection rule would live in the reader instead of in classification, and the values not selected would be lost before they could be recorded.                                                                                                                                                                                                                                |
 | **Other detection signals**: the name of the wireless network, the identity of the network gateway, or the range of the host's addresses. | A DNS suffix is present on both wired and wireless connections and is assigned by the office network's administrators. A wireless network name is absent on wired connections; a gateway identity requires reading address-resolution data; private address ranges are reused by home networks. Resolved names and address ranges remain reserved for future consideration (N-5). |
 | **A resident background service** that samples on a timer.                                                                                | It duplicates the host's scheduling facility and adds a long-running process with its own lifecycle and failure modes.                                                                                                                                                                                                                                                            |
 | **A separate database server.**                                                                                                           | One user on one host needs no server; an embedded engine provides the required transactions and consistency.                                                                                                                                                                                                                                                                      |
 | **Store daily assessments** alongside the evidence.                                                                                       | A change to the daily threshold, a manual correction, or a holiday would require recomputing stored assessments, which could then disagree with their inputs.                                                                                                                                                                                                                     |
 | **Back up by copying the database file directly.**                                                                                        | A direct copy can miss committed changes held in the companion files and can capture an inconsistent state.                                                                                                                                                                                                                                                                       |
+| **Treat the host's global search list as search candidates of every adapter.**                                                            | The global list is configured for the host rather than learned from the connected network, so it is present at every location; counting it would produce office verdicts wherever the host connects.                                                                                                                                                                              |
 
 ---
 
@@ -1022,7 +1030,7 @@ figures are estimates; neither has been measured.
 
 | ID  | Question                                                                                                                                                                                                            | Proposed answer                                                                                    |
 |-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| Q-1 | Which suffix sources should the default admission policy admit?                                                                                                                                                     | The primary and search sources ([Section 6.2](#62-classification-and-admission)), with the limitation recorded in R-1.                 |
+| Q-1 | Which suffix sources should the default admission policy admit?                                                                                                                                                     | Both the primary and the search source ([Section 6.2](#62-classification-and-admission)), with the limitation recorded in R-1.         |
 | Q-2 | Should Rollcall provide an operation that reports which past observations an alternative detection profile would classify differently?                                                                              | Not in the first release; the retained evidence makes it possible later.                           |
 | Q-3 | Should the user be able to limit or purge retained network evidence?                                                                                                                                                | Unresolved. Any such control conflicts with the append-only guarantee and requires its own design. |
 | Q-4 | Should unrecognized configuration settings be rejected?                                                                                                                                                             | Yes ([Section 11.2](#112-rules) rule 3), pending confirmation.                                                   |
