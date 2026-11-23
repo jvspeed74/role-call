@@ -17,32 +17,58 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Rollcall supports only Windows 11 on x64 and ARM64 (docs/technical-proposal.md, G-6 and N-7). GitHub has no hosted
+  # x64 Windows 11 runner, so x64 runs twice: under the x64 emulation of Windows 11 on ARM64, and natively on Windows
+  # Server 2025 as a stand-in. `execution` records which, for the per-architecture report SC-6 requires.
   lint-build-test:
-    name: lint-build-test (x86_64-unknown-linux-gnu)
-    runs-on: ubuntu-latest
+    name: lint-build-test (${{ matrix.target }}, ${{ matrix.runner }}, ${{ matrix.execution }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            execution: native
+          - runner: windows-11-arm
+            target: x86_64-pc-windows-msvc
+            execution: emulated
+          - runner: windows-2025
+            target: x86_64-pc-windows-msvc
+            execution: native
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Install the toolchain
-        run: rustup toolchain install
+      - name: Install the toolchain and target
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          rustup toolchain install
+          rustup target add ${{ matrix.target }}
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: ${{ matrix.target }}
 
+      # rustfmt formats source, not a compilation target, so `cargo fmt` takes no `--target`.
       - name: rustfmt
         run: cargo fmt --all --check
 
       - name: clippy
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+        run: cargo clippy --workspace --all-targets --locked --target ${{ matrix.target }} -- -D warnings
 
       - name: rustdoc
-        run: cargo doc --workspace --no-deps --locked
+        run: cargo doc --workspace --no-deps --locked --target ${{ matrix.target }}
         env:
           RUSTDOCFLAGS: -D warnings
 
       - name: Build
-        run: cargo build --workspace --locked
+        run: cargo build --workspace --locked --target ${{ matrix.target }}
 
       - name: Test
-        run: cargo test --workspace --locked
+        run: cargo test --workspace --locked --target ${{ matrix.target }}
