@@ -17,9 +17,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # Rollcall supports only Windows 11 on x64 and ARM64 (docs/technical-proposal.md, G-6 and N-7). GitHub has no hosted
-  # x64 Windows 11 runner, so x64 runs twice: under the x64 emulation of Windows 11 on ARM64, and natively on Windows
-  # Server 2025 as a stand-in. `execution` records which, for the per-architecture report SC-6 requires.
   lint-build-test:
     name: lint-build-test (${{ matrix.target }}, ${{ matrix.runner }}, ${{ matrix.execution }})
     strategy:
@@ -55,7 +52,6 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
-      # rustfmt formats source, not a compilation target, so `cargo fmt` takes no `--target`.
       - name: rustfmt
         run: cargo fmt --all --check
 
