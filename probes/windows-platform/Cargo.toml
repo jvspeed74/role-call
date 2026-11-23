@@ -1,0 +1,24 @@
+[package]
+name = "windows-platform-probe"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Records Windows platform facts for docs/technical-proposal.md Section 13. Not shipped."
+
+# Its own workspace, so the root workspace neither builds nor lints it.
+[workspace]
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "=0.61.2", features = [
+    "Win32_Foundation",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_NetworkManagement_Ndis",
+    "Win32_Networking_WinSock",
+] }
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[lints.clippy]
+undocumented_unsafe_blocks = "deny"
+multiple_unsafe_ops_per_block = "deny"
