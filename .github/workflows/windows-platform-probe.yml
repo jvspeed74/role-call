@@ -1,0 +1,187 @@
+name: Windows platform probe
+
+# One-off probe for docs/technical-proposal.md Section 13. Runs from a draft pull request; not merged.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "probes/windows-platform/**"
+      - ".github/workflows/windows-platform-probe.yml"
+
+concurrency:
+  group: windows-platform-probe-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  probe:
+    name: probe (${{ matrix.runner }}, ${{ matrix.target }}, ${{ matrix.execution }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            execution: native
+          - runner: windows-11-arm
+            target: x86_64-pc-windows-msvc
+            execution: emulated
+          - runner: windows-2025
+            target: x86_64-pc-windows-msvc
+            execution: native
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: probes/windows-platform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the toolchain and target
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          rustup toolchain install
+          rustup target add ${{ matrix.target }}
+
+      - name: Format, lint, build
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          cargo fmt --check
+          cargo clippy --locked --all-targets --target ${{ matrix.target }} -- -D warnings
+          cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Record conditions
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $out = Join-Path $env:RUNNER_TEMP 'probe-out'
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $exe = (Resolve-Path 'target/${{ matrix.target }}/release/windows-platform-probe.exe').Path
+          Add-Content -Path $env:GITHUB_ENV -Value "PROBE_OUT=$out"
+          Add-Content -Path $env:GITHUB_ENV -Value "PROBE_EXE=$exe"
+          $f = Join-Path $out '00-conditions.txt'
+          "utc_start=$((Get-Date).ToUniversalTime().ToString('o'))" | Out-File $f
+          "runner_label=${{ matrix.runner }} target=${{ matrix.target }} execution=${{ matrix.execution }}" | Out-File -Append $f
+          "RUNNER_OS=$env:RUNNER_OS RUNNER_ARCH=$env:RUNNER_ARCH PROCESSOR_ARCHITECTURE=$env:PROCESSOR_ARCHITECTURE" | Out-File -Append $f
+          "ImageOS=$env:ImageOS ImageVersion=$env:ImageVersion" | Out-File -Append $f
+          "git_sha=$env:GITHUB_SHA run_id=$env:GITHUB_RUN_ID run_attempt=$env:GITHUB_RUN_ATTEMPT" | Out-File -Append $f
+          Get-CimInstance Win32_OperatingSystem |
+            Format-List Caption, Version, BuildNumber, OSArchitecture, ProductType, OSLanguage |
+            Out-File -Append $f
+          Get-CimInstance Win32_Processor | Format-List Name, Architecture | Out-File -Append $f
+          Get-CimInstance Win32_ComputerSystem | Format-List PartOfDomain, Domain, Manufacturer, Model |
+            Out-File -Append $f
+          rustc -Vv | Out-File -Append $f
+          foreach ($p in @($env:RUNNER_TEMP, $env:LOCALAPPDATA)) {
+            "volume_for=$p" | Out-File -Append $f
+            Get-Volume -DriveLetter (Split-Path -Qualifier $p).TrimEnd(':') |
+              Format-List DriveLetter, FileSystemType, DriveType | Out-File -Append $f
+          }
+          Get-Content $f
+
+      - name: "A-2 baseline: adapters as the runner configures them"
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          foreach ($mode in 'unspec', 'inet', 'unspec-all') {
+            & $env:PROBE_EXE adapters $mode |
+              Tee-Object -FilePath (Join-Path $env:PROBE_OUT "10-adapters-$mode.txt")
+          }
+          Get-NetAdapter -IncludeHidden |
+            Format-List Name, InterfaceDescription, InterfaceGuid, ifIndex, InterfaceType, Status, MediaType, Virtual, Hidden |
+            Out-File (Join-Path $env:PROBE_OUT '11-get-netadapter.txt')
+          Get-DnsClient | Format-List * | Out-File (Join-Path $env:PROBE_OUT '12-get-dnsclient.txt')
+          Get-DnsClientGlobalSetting | Format-List * | Out-File (Join-Path $env:PROBE_OUT '13-get-dnsclientglobalsetting.txt')
+          ipconfig /all | Out-File (Join-Path $env:PROBE_OUT '14-ipconfig-all.txt')
+
+      - name: "A-3: user-profile directory"
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $f = Join-Path $env:PROBE_OUT '20-profile.txt'
+          & $env:PROBE_EXE profile | Tee-Object -FilePath $f
+          "dotnet_UserProfile=$([Environment]::GetFolderPath('UserProfile'))" | Tee-Object -FilePath $f -Append
+          "--- USERPROFILE removed from the child environment ---" | Out-File -Append $f
+          $saved = $env:USERPROFILE
+          Remove-Item Env:USERPROFILE
+          try { & $env:PROBE_EXE profile | Tee-Object -FilePath $f -Append } finally { $env:USERPROFILE = $saved }
+          "whoami=$(whoami)" | Tee-Object -FilePath $f -Append
+
+      - name: "A-6: exclusive file creation"
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $dirs = [ordered]@{
+            'runner-temp'    = (Join-Path $env:RUNNER_TEMP 'a6')
+            'local-app-data' = (Join-Path $env:LOCALAPPDATA 'rollcall-probe-a6')
+          }
+          foreach ($name in $dirs.Keys) {
+            New-Item -ItemType Directory -Force -Path $dirs[$name] | Out-Null
+            & $env:PROBE_EXE create-new $dirs[$name] 1000 4 |
+              Tee-Object -FilePath (Join-Path $env:PROBE_OUT "30-create-new-$name.txt")
+          }
+
+      - name: "A-2 controlled: configure known suffixes, read them back"
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $route = Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' |
+            Sort-Object RouteMetric | Select-Object -First 1
+          $nic = Get-NetAdapter -InterfaceIndex $route.InterfaceIndex
+          $guid = [string]$nic.InterfaceGuid
+          if (-not $guid.StartsWith('{')) { $guid = "{$guid}" }
+          Add-Content -Path $env:GITHUB_ENV -Value "PROBE_TARGET_GUID=$guid"
+          $f = Join-Path $env:PROBE_OUT '40-inject.txt'
+          "target ifIndex=$($route.InterfaceIndex) InterfaceGuid=$guid Name=$($nic.Name)" | Tee-Object -FilePath $f
+          & $env:PROBE_EXE set-dns $guid 'probe-primary.rollcall.test' 'probe-c.rollcall.test probe-a.rollcall.test probe-b.rollcall.test' |
+            Tee-Object -FilePath $f -Append
+          Set-DnsClientGlobalSetting -SuffixSearchList @('probe-global-1.rollcall.test', 'probe-global-2.rollcall.test')
+          $start = Get-Date
+          do {
+            $text = (& $env:PROBE_EXE adapters unspec) -join "`n"
+            $seen = $text.Contains('probe-primary.rollcall.test') -and $text.Contains('probe-a.rollcall.test')
+            if (-not $seen) { Start-Sleep -Seconds 1 }
+          } while (-not $seen -and ((Get-Date) - $start).TotalSeconds -lt 30)
+          "visible=$seen elapsed_seconds=$([math]::Round(((Get-Date) - $start).TotalSeconds, 1))" |
+            Tee-Object -FilePath $f -Append
+          $text | Out-File (Join-Path $env:PROBE_OUT '41-adapters-unspec-after-inject.txt')
+          & $env:PROBE_EXE adapters inet | Out-File (Join-Path $env:PROBE_OUT '42-adapters-inet-after-inject.txt')
+          Get-DnsClient | Format-List * | Out-File (Join-Path $env:PROBE_OUT '43-get-dnsclient-after-inject.txt')
+          Get-DnsClientGlobalSetting | Format-List * | Out-File (Join-Path $env:PROBE_OUT '44-get-dnsclientglobalsetting-after-inject.txt')
+          ipconfig /all | Out-File (Join-Path $env:PROBE_OUT '45-ipconfig-all-after-inject.txt')
+          if (-not $seen) { throw 'injected suffixes did not appear within 30 s' }
+
+      - name: "A-2 edge values: case, trailing dot, duplicates"
+        if: ${{ !cancelled() && env.PROBE_TARGET_GUID != '' }}
+        continue-on-error: true
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $f = Join-Path $env:PROBE_OUT '50-edge.txt'
+          & $env:PROBE_EXE set-dns $env:PROBE_TARGET_GUID 'Probe-Primary.Rollcall.TEST.' 'PROBE-UPPER.Rollcall.Test probe-dot.rollcall.test. probe-dup.rollcall.test probe-dup.rollcall.test' |
+            Tee-Object -FilePath $f
+          Start-Sleep -Seconds 5
+          & $env:PROBE_EXE adapters unspec | Tee-Object -FilePath $f -Append
+
+      - name: Upload probe output
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-platform-probe-${{ matrix.runner }}-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/probe-out
+          if-no-files-found: error
+          retention-days: 90
