@@ -381,9 +381,9 @@ orders the work of an invocation.
 4. **Least access.** Each operation reads or writes only the resources it needs ([Section 5.5](#55-resource-access-by-operation)).
 5. **Refusal over guessing.** Rollcall never substitutes a default for something it cannot determine: unresolvable
    timezone rules, an inaccessible store, or an invalid stored value causes a reported failure, not a silent fallback.
-6. **Contained dependence.** Operating-system-specific network code is confined to one component, and every other
-   dependence on the operating system is confined to the component that owns the affected resource. The rules that reach
-   conclusions contain no operating-system-specific code.
+6. **Contained operating-system dependence.** Operating-system-specific network code is confined to one component, and
+   every other dependence on the operating system is confined to the component that owns the affected resource. The
+   rules that reach conclusions contain no operating-system-specific code.
 
 ### 3.4 Success criteria
 
